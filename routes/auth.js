@@ -26,13 +26,12 @@ router.get('/signin', async (req, res, next) => {
 });
 
 /**
- * POST /auth/redirect
+ * GET /auth/redirect
  * The callback endpoint for Entra ID. Handles the authorization code.
- * Note: Entra External ID sends a POST request to this endpoint.
  */
-router.post('/redirect', async (req, res, next) => {
+router.get('/redirect', async (req, res, next) => {
     const tokenRequest = {
-        code: req.body.code,
+        code: req.query.code,
         scopes: scopes,
         redirectUri: REDIRECT_URI,
     };
