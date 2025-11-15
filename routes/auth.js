@@ -56,8 +56,33 @@ router.get('/redirect', async (req, res, next) => {
  * Logs the user out of both the local session and the Entra ID session.
  */
 router.get('/signout', (req, res, next) => {
-    // Construct the Entra ID logout URI 
-    const logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/oauth2/v2.0/logout?post_logout_redirect_uri=${POST_LOGOUT_REDIRECT_URI}`;
+    
+    // --- THIS IS THE FIX ---
+    // Get the policy name from the logged-in user's session claims.
+    // 'tfp' (Trust Framework Policy) is the claim that holds the policy name.
+    const policyName = req.session.account?.idTokenClaims?.tfp;
+
+    if (!policyName) {
+        // If we can't find the policy, we can't build the correct logout URL.
+        // This might happen if the session is already gone.
+        // As a fallback, just destroy the local session and redirect home.
+        console.error("Could not find 'tfp' claim in session. Logging out locally only.");
+        req.session.destroy(() => {
+            res.redirect('/');
+        });
+        return; 
+    }
+
+    // URL-encode the post-logout redirect URI
+    const encodedRedirectUri = encodeURIComponent(POST_LOGOUT_REDIRECT_URI);
+    
+    // --- UPDATED URL CONSTRUCTION ---
+    // The logout URL *must* include the policy name used to sign in.
+    const logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/${policyName}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodedRedirectUri}`;
+
+    console.log("--- START SIGNOUT DEBUG ---");
+    console.log("Policy Name:", policyName);
+    console.log("Final Logout URL:", logoutUri);
 
     // Destroy the local session
     req.session.destroy((err) => {
@@ -65,7 +90,7 @@ router.get('/signout', (req, res, next) => {
             return next(err);
         }
         
-        // Redirect to Entra ID to end the remote session
+        // Redirect to the correct Entra ID policy logout endpoint
         res.redirect(logoutUri);
     });
 });
