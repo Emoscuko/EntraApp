@@ -1,4 +1,4 @@
-// Use import for dotenv/config
+// Use import for dotenv/configa
 import 'dotenv/config'; 
 
 // ESM imports for packages
