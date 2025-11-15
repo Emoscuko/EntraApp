@@ -40,11 +40,27 @@ router.get('/redirect', async (req, res, next) => {
         // Exchange the auth code for an ID token
         const tokenResponse = await authProvider.acquireTokenByCode(tokenRequest);
 
+        // --- EN ÖNEMLİ DEBUG SATIRI ---
+        // Microsoft'tan gelen yanıtın tamamını görelim.
+        console.log("--- TAM TOKEN YANITI ---");
+        console.log(tokenResponse);
+        console.log("-------------------------");
+        // --- DEBUG SONU ---
+
+
         // Store user information in the session
         req.session.isAuthenticated = true;
+        // ... (kodun geri kalanı aynı) ...
         req.session.account = tokenResponse.account;
+        if (tokenResponse.idToken) {
+            req.session.account.idToken = tokenResponse.idToken;
+        } else {
+            // --- HATA İŞARETİ ---
+            console.error("KRİTİK HATA: tokenResponse.idToken 'undefined' geldi!");
+            // --- HATA SONU ---
+        }
         
-        // Redirect to the protected profile page
+        console.log("Oturum (session) kaydedildi:", req.session.account);
         res.redirect('/profile');
     } catch (error) {
         next(error);
@@ -53,13 +69,15 @@ router.get('/redirect', async (req, res, next) => {
 
 /**
  * GET /auth/signout
- * Logs the user out of both the local session and the Entra ID session.
+ * Logs the user out of both the local session and the Enta ID session.
  */
 router.get('/signout', (req, res, next) => {
-    
-    // --- THIS IS THE FIX ---
-    // The policy name is static for this application, loaded from .env
+
     const policyName = process.env.POLICY_NAME;
+
+    // --- NEW ---
+    // Get the ID token from the user's session
+    const idToken = req.session.account?.idToken;
 
     if (!policyName) {
         // This will only happen if you forget to add it to your .env file
@@ -74,8 +92,17 @@ router.get('/signout', (req, res, next) => {
     const encodedRedirectUri = encodeURIComponent(POST_LOGOUT_REDIRECT_URI);
     
     // --- UPDATED URL CONSTRUCTION ---
-    // The logout URL *must* include the policy name used to sign in.
-    const logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/${policyName}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodedRedirectUri}`;
+    // Start with the base URL
+    let logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/${policyName}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodedRedirectUri}`;
+
+    // --- NEW ---
+    // If we have an ID token, add it as a hint.
+    // This tells Entra ID *which* user to log out, skipping the account picker.
+    if (idToken) {
+        logoutUri += `&id_token_hint=${encodeURIComponent(idToken)}`;
+    } else {
+        console.warn("Could not find idToken in session. Logout may show account picker.");
+    }
 
     console.log("--- START SIGNOUT DEBUG ---");
     console.log("Policy Name:", policyName);
