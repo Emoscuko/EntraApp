@@ -1,0 +1,12 @@
+<%- include('partials/header') %>
+
+<h1>Welcome to the MSAL Node.js 24 Demo</h1>
+<p>This is a simple web application demonstrating authentication with Microsoft Entra External ID.</p>
+
+<% if (isAuthenticated) { %>
+    <p>You are currently signed in. <a href="/profile">View your profile</a>.</p>
+<% } else { %>
+    <p>Please <a href="/auth/signin">sign in</a> to continue.</p>
+<% } %>
+
+<%- include('partials/footer') %>

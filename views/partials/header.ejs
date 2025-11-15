@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - MSAL Node App</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    <style>
+        nav { display: flex; justify-content: space-between; align-items: center; }
+        nav ul { list-style: none; display: flex; gap: 1rem; margin: 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div>
+                <a href="/"><strong>MSAL Node App</strong></a>
+            </div>
+            <ul>
+                <li><a href="/">Home</a></li>
+
+                <% if (isAuthenticated) { %>
+                    <li><a href="/profile">Profile</a></li>
+                    <li>
+                        <span>Welcome, <%= account.name %></span> </li>
+                    <li><a href="/auth/signout">Sign Out</a></li>
+                <% } else { %>
+                    <li><a href="/auth/signin">Sign In</a></li>
+                <% } %>
+
+            </ul>
+        </nav>
+    </header>
+    <main>
