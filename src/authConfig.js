@@ -11,7 +11,7 @@ export const msalConfig = {
     // ⬇ BURAYI DEĞİŞTİRİN: Müşteri Kiracınızın tam adı.
     // Örn: "https://ardahwcustomertenant.onmicrosoft.com/"
     // VEYA "https://[tenant-name].ciamlogin.com/" (Yeni format bu olabilir, portal'dan kontrol edin)
-    authority: "https://EmirhanHWCustomerTenant.ciamlogin.com/", 
+    authority: "https://EmirhanAtarHWCustomerTenant..ciamlogin.com/", 
 
     
     redirectUri: "https://emirhanatar-hw-entra-rg-e9emgzfma3ethagy.westeurope-01.azurewebsites.net/auth/redirect", 
@@ -19,7 +19,7 @@ export const msalConfig = {
     // ⬇ BURAYI DEĞİŞTİRİN: (Gerekirse) authority'yi bu formatta da deneyebilirsiniz.
     // authority: "https://[YOUR_TENANT_DOMAIN_NAME].ciamlogin.com/",
 
-    knownAuthorities: ["EmirhanHWCustomerTenant.ciamlogin.com"],// Kiracı alan adınızı buraya ekleyin
+    knownAuthorities: ["EmirhanAtarHWCustomerTenant..ciamlogin.com"],// Kiracı alan adınızı buraya ekleyin
   },
   cache: {
     cacheLocation: "sessionStorage", // Bu, oturum depolamayı ayarlar
