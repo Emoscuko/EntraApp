@@ -58,15 +58,12 @@ router.get('/redirect', async (req, res, next) => {
 router.get('/signout', (req, res, next) => {
     
     // --- THIS IS THE FIX ---
-    // Get the policy name from the logged-in user's session claims.
-    // 'tfp' (Trust Framework Policy) is the claim that holds the policy name.
-    const policyName = req.session.account?.idTokenClaims?.tfp;
+    // The policy name is static for this application, loaded from .env
+    const policyName = process.env.POLICY_NAME;
 
     if (!policyName) {
-        // If we can't find the policy, we can't build the correct logout URL.
-        // This might happen if the session is already gone.
-        // As a fallback, just destroy the local session and redirect home.
-        console.error("Could not find 'tfp' claim in session. Logging out locally only.");
+        // This will only happen if you forget to add it to your .env file
+        console.error("POLICY_NAME is not set in .env file. Cannot build logout URL.");
         req.session.destroy(() => {
             res.redirect('/');
         });
