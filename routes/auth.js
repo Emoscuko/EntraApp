@@ -37,7 +37,6 @@ router.get('/redirect', async (req, res, next) => {
 
         req.session.isAuthenticated = true;
         req.session.account = tokenResponse.account;
-        req.session.idToken = tokenResponse.idToken; // DEĞİŞİKLİK: idToken'ı doğrudan session'a kaydedin
         
         res.redirect('/profile');
     } catch (error) {
@@ -47,11 +46,10 @@ router.get('/redirect', async (req, res, next) => {
 
 /**
  * GET /auth/signout
- * This logic is 100% correct.
+ * Hesap seçici ile çıkış yapar - kullanıcı hangi hesaptan çıkış yapacağını seçebilir
  */
 router.get('/signout', (req, res, next) => {
     const policyName = process.env.POLICY_NAME;
-    const idToken = req.session.idToken; // DEĞİŞİKLİK: idToken'ı doğrudan session'dan okuyun
 
     if (!policyName) {
         console.error("POLICY_NAME is not set in .env file.");
@@ -61,18 +59,19 @@ router.get('/signout', (req, res, next) => {
 
     const encodedRedirectUri = encodeURIComponent(POST_LOGOUT_REDIRECT_URI);
     
-    let logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/${policyName}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodedRedirectUri}`;
+    // id_token_hint OLMADAN logout URL'i - Microsoft hesap seçici gösterecek
+    const logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/${policyName}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodedRedirectUri}`;
 
-    if (idToken) {
-        logoutUri += `&id_token_hint=${encodeURIComponent(idToken)}`;
-    } else {
-        console.warn("Could not find idToken in session. Logout may show account picker.");
-    }
-
-    req.session.destroy((err) => {
-        if (err) { return next(err); }
-        res.redirect(logoutUri);
-    });
+    // ÖNEMLİ: Session'ı SONRA sil - önce Microsoft'a yönlendir
+    // Böylece Microsoft'un çerezleri hala aktif olacak ve hesabı gösterecek
+    res.redirect(logoutUri);
+    
+    // Session'ı async olarak sil (kullanıcı Microsoft sayfasına gittikten sonra)
+    setTimeout(() => {
+        req.session.destroy((err) => {
+            if (err) console.error("Session destroy error:", err);
+        });
+    }, 100);
 });
 
 export default router;
