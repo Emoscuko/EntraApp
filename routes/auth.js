@@ -37,6 +37,7 @@ router.get('/redirect', async (req, res, next) => {
 
         req.session.isAuthenticated = true;
         req.session.account = tokenResponse.account;
+        req.session.idToken = tokenResponse.idToken; // ✅ ID Token'ı session'da sakla
         
         res.redirect('/profile');
     } catch (error) {
@@ -46,10 +47,11 @@ router.get('/redirect', async (req, res, next) => {
 
 /**
  * GET /auth/signout
- * Hesap seçici ile çıkış yapar - kullanıcı hangi hesaptan çıkış yapacağını seçebilir
+ * ID token hint ile sessiz çıkış yapar - hesap seçici gösterilmez
  */
 router.get('/signout', (req, res, next) => {
     const policyName = process.env.POLICY_NAME;
+    const idToken = req.session.idToken; // ✅ Session'dan ID token al
 
     if (!policyName) {
         console.error("POLICY_NAME is not set in .env file.");
@@ -59,19 +61,19 @@ router.get('/signout', (req, res, next) => {
 
     const encodedRedirectUri = encodeURIComponent(POST_LOGOUT_REDIRECT_URI);
     
-    // id_token_hint OLMADAN logout URL'i - Microsoft hesap seçici gösterecek
-    const logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/${policyName}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodedRedirectUri}`;
-
-    // ÖNEMLİ: Session'ı SONRA sil - önce Microsoft'a yönlendir
-    // Böylece Microsoft'un çerezleri hala aktif olacak ve hesabı gösterecek
-    res.redirect(logoutUri);
+    // ✅ Logout URL'ini oluştur
+    let logoutUri = `https://${process.env.TENANT_SUBDOMAIN}.ciamlogin.com/${policyName}/oauth2/v2.0/logout?post_logout_redirect_uri=${encodedRedirectUri}`;
     
-    // Session'ı async olarak sil (kullanıcı Microsoft sayfasına gittikten sonra)
-    setTimeout(() => {
-        req.session.destroy((err) => {
-            if (err) console.error("Session destroy error:", err);
-        });
-    }, 100);
+    // ✅ ID token varsa id_token_hint parametresini ekle
+    if (idToken) {
+        logoutUri += `&id_token_hint=${idToken}`;
+    }
+
+    // ÖNEMLİ: Session'ı Microsoft'a yönlendirmeden ÖNCE sil
+    req.session.destroy((err) => {
+        if (err) console.error("Session destroy error:", err);
+        res.redirect(logoutUri);
+    });
 });
 
 export default router;
