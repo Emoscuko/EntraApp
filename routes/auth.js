@@ -37,13 +37,7 @@ router.get('/redirect', async (req, res, next) => {
 
         req.session.isAuthenticated = true;
         req.session.account = tokenResponse.account;
-
-        // This is the critical line
-        if (tokenResponse.idToken) {
-            req.session.account.idToken = tokenResponse.idToken;
-        } else {
-            console.error("KRİTİK HATA: tokenResponse.idToken 'undefined' geldi!");
-        }
+        req.session.idToken = tokenResponse.idToken; // DEĞİŞİKLİK: idToken'ı doğrudan session'a kaydedin
         
         res.redirect('/profile');
     } catch (error) {
@@ -57,7 +51,7 @@ router.get('/redirect', async (req, res, next) => {
  */
 router.get('/signout', (req, res, next) => {
     const policyName = process.env.POLICY_NAME;
-    const idToken = req.session.account?.idToken; // Relies on /redirect
+    const idToken = req.session.idToken; // DEĞİŞİKLİK: idToken'ı doğrudan session'dan okuyun
 
     if (!policyName) {
         console.error("POLICY_NAME is not set in .env file.");
